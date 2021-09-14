@@ -12,11 +12,14 @@ This project aims to demonstrate how to extend the capacity of Parking stations 
 ### Steps to run the project.
 1. Start Elasticsearch
 2. Create the required indices with the following comands (from Kibana dev tools):
-PUT /parking_metadata  
-PUT /e_charging_metadata  
-PUT /misc  
+
+PUT /parking_metadata    
+
+PUT /e_charging_metadata    
+
+PUT /misc    
   
-PUT /parking_measurements  
+PUT /parking_measurements    
 {     
   "mappings": {  
     "properties": {  
@@ -29,7 +32,7 @@ PUT /parking_measurements
 }    
 
   
-PUT /e_charging_measurements
+PUT /e_charging_measurements  
 {  
   "mappings": {  
     "properties": {  
