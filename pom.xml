@@ -11,7 +11,7 @@
     <modules>
         <module>APIConnector-KafkaProducers</module>
         <module>KafkaConsumer-ElasticSearch</module>
-        <module>SparkProcessing-ElasticSearch</module>
+        <module>KafkaStreamProcessing</module>
     </modules>
 
     <properties>

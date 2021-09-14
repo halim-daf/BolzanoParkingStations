@@ -92,11 +92,16 @@ public class StationProducer {
     public static void main(String[] args) {
         String host = "https://mobility.api.opendatahub.bz.it/v2/flat/";
 
+        // Kafka server
+        String bootstrapServers = "127.0.0.1:9092";
+
         // Headers for a request
         String header = "accept";
         String value = "application/json";
 
+
         new StationProducer(host, header, value).run();
+
     }
 
 

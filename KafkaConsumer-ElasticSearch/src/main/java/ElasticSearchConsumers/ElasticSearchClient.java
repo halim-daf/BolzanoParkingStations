@@ -14,20 +14,23 @@ public class ElasticSearchClient {
     public static RestHighLevelClient createClient(){
 
         // Setting up credentials
-        String hostname = "sudtyrolmobility-6614071665.eu-central-1.bonsaisearch.net";
-        String username = "y8dnw3hmzk";
-        String password = "jq5hq7spm5";
+//        String hostname = "sudtyrolmobility-9143737659.us-east-1.bonsaisearch.net";
+//        String username = "3j9jjsiat3";
+//        String password = "3ruil2aqei";
 
-        // Setting a credentials provider to supply username/password
-        final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(AuthScope.ANY,
-                new UsernamePasswordCredentials(username, password));
+//        // Setting a credentials provider to supply username/password
+//        final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+//        credentialsProvider.setCredentials(AuthScope.ANY,
+//                new UsernamePasswordCredentials(username, password));
+//
+//
+//        RestClientBuilder builder = RestClient.builder(
+//                new HttpHost(hostname, 443, "https"))
+//                .setHttpClientConfigCallback(
+//                        httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider));
 
-
-        RestClientBuilder builder = RestClient.builder(
-                new HttpHost(hostname, 443, "https"))
-                .setHttpClientConfigCallback(
-                        httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider));
+        String hostname = "localhost";
+        RestClientBuilder builder = RestClient.builder(new HttpHost(hostname,9200,"http"));
 
         RestHighLevelClient client = new RestHighLevelClient(builder);
         return client;

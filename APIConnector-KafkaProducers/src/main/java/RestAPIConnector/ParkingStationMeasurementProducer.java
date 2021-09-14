@@ -12,9 +12,8 @@ public class ParkingStationMeasurementProducer {
         // Kafka server
         String bootstrapServers = "127.0.0.1:9092";
 
-        // Frequency of polls in seconds , N=5 => N-2 = 3,  we want to poll each 3 minutes
-        int sleepDuration = 3*60;
-//        int sleepDuration = 20;
+        // Frequency of polls in seconds
+        int sleepDuration = 2*60;
 
 
         //Data producing details

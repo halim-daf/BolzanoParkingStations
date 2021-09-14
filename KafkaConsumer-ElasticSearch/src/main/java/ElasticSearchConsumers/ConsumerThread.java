@@ -9,6 +9,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
@@ -21,7 +22,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.ZoneOffset;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 
@@ -97,24 +100,45 @@ public class ConsumerThread implements Runnable{
                         logger.info("Inserting document : " +index +"/_doc/"+ id);
 
                         //Converting the Station to JSONString
-                        String jsonMeasurement = ow.writeValueAsString(record.value());
+//                        String jsonMeasurement = ow.writeValueAsString(record.value());
+                        Map<String, Object> jsonMeasurement = new HashMap<>();
+                        jsonMeasurement.put("code", record.value().getCode());
+                        jsonMeasurement.put("validTime", record.value().getValidTime());
+                        jsonMeasurement.put("value", record.value().getValue());
+                        jsonMeasurement.put("is_read", "false");
+
+//                        //Setting up is_read flag to indicate if the record has been retrieved from ES yet or not
+//                        jsonMeasurement = jsonMeasurement.replace("\n}",",\n  \"is_read\" : \"false\"\n}") ;
 
                         //Prepare data for bulk insert into ElasticSearch
-                        bulkRequest.add(new IndexRequest(index).id(id).source(jsonMeasurement, XContentType.JSON));
+//                        bulkRequest.add(new IndexRequest(index).id(id).source(jsonMeasurement, XContentType.JSON));
+                        bulkRequest.add(new IndexRequest(index).id(id).source(jsonMeasurement));
+                        logger.info("Finished inserting document : " +index +"/_doc/"+ id);
 
                     } catch (NullPointerException e){
                         logger.warn("skipping bad data: " + record.value());
                     }
 
-
                 }
-                // We only commit if we recieved something
+                // We only commit if we received something
                 // Bulk Insert of Data
                 if (recordCount > 0) {
                     BulkResponse bulkItemResponses = elasticSearchClient.bulk(bulkRequest, RequestOptions.DEFAULT);
-                    logger.info("Committing offsets...");
-                    consumer.commitSync();
-                    logger.info("Offsets have been committed");
+                    if (!bulkItemResponses.hasFailures()) {
+                        logger.info("Status of bulk request : " + bulkItemResponses.status());
+                        logger.info("Committing offsets...");
+                        consumer.commitSync();
+                        logger.info("Offsets have been committed");
+                    }else{
+                        for (BulkItemResponse bulkItemResponse : bulkItemResponses) {
+                            if (bulkItemResponse.isFailed()) {
+                                BulkItemResponse.Failure failure = bulkItemResponse.getFailure();
+                                logger.error("Failure ID : " + failure.getId() + "\tFailure Index : "
+                                        + failure.getIndex() + "\tFailure Message : " + failure.getMessage());
+                            }
+                        }
+                    }
+
                     try {
                         Thread.sleep(30*1000); // 30 seconds
                     } catch (InterruptedException e) {

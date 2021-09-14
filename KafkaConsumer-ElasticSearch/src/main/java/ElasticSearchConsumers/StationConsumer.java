@@ -33,9 +33,5 @@ public class StationConsumer {
             e.printStackTrace();
         }
 
-
-
-
-
     }
 }

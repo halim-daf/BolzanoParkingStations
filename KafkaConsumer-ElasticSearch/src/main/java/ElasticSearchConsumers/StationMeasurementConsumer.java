@@ -56,6 +56,7 @@ public class StationMeasurementConsumer {
             logger.error("Consumer got interrupted", e);
         } finally {
             logger.info("Consumer is closing");
+
         }
                 }
 

@@ -67,6 +67,7 @@ public class ProducerThread implements Runnable{
                                         logger.info("Received new metadata. \n" +
                                                 "Topic:" + recordMetadata.topic() + "\n" +
                                                 "Partition: " + recordMetadata.partition() + "\n" +
+                                                "TimeStamp: " + recordMetadata.timestamp() + "\n" +
                                                 "Offset: " + recordMetadata.offset());
                                     }
                                 });

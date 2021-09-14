@@ -9,7 +9,10 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
@@ -25,6 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import static ElasticSearchConsumers.ElasticSearchClient.createClient;
+import java.util.Arrays;
 
 public class StationMetaDataConsumer {
 
@@ -34,7 +39,7 @@ public class StationMetaDataConsumer {
     private final String deserializer;
     private final List<String> stationTypes;
     private final KafkaConsumer<String, Station> consumer;
-    private RestHighLevelClient elasticSearchClient;
+    private final RestHighLevelClient elasticSearchClient;
 
     public StationMetaDataConsumer(String bootstrapServers, String group_ID, List<String> stationTypes,
                                    RestHighLevelClient elasticSearchClient){
@@ -49,17 +54,43 @@ public class StationMetaDataConsumer {
 
     }
 
+    public KafkaConsumer<String, Station> createStationKafkaConsumer(){
+
+        // Create consumer config
+        Properties properties = new Properties();
+        properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, deserializer);
+        properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG,group_ID);
+        properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,"earliest");
+        properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+
+        // Create consumer
+        KafkaConsumer<String, Station> consumer = new KafkaConsumer<>(properties);
+
+
+        //Set the topics
+        List<String> topics = new ArrayList<>();
+        for(String stationType: stationTypes){
+            topics.add(stationType+ "s_metadata");
+        }
+
+        // Subscribe to topics
+        consumer.subscribe(topics);
+        return consumer;
+    }
+
     public void run(){
 
         //Creating the ObjectMapper object
         ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
 
-        // We want to read the meta data from the beginning, we use seekToBeginning
-        consumer.seekToBeginning(consumer.assignment());
+//        // We want to read the meta data from the beginning, we use seekToBeginning
+//        consumer.seekToBeginning(consumer.assignment());
 
         // Poll for data
         logger.info("Polling stations metadata");
-        ConsumerRecords<String, Station> records = consumer.poll(Duration.ofSeconds(5));
+        ConsumerRecords<String, Station> records = consumer.poll(Duration.ofSeconds(3));
 
         int recordCount = records.count();
         logger.info("Received " + recordCount + " records");
@@ -91,6 +122,7 @@ public class StationMetaDataConsumer {
                 //Converting the Station to JSONString
                 String jsonStation = ow.writeValueAsString(record.value());
 
+
                 //Prepare data for bulk insert into ElasticSearch
                 bulkRequest.add(new IndexRequest(index).id(id).source(jsonStation, XContentType.JSON));
 
@@ -107,9 +139,21 @@ public class StationMetaDataConsumer {
         try{
             if (recordCount > 0) {
                 BulkResponse bulkItemResponses = elasticSearchClient.bulk(bulkRequest, RequestOptions.DEFAULT);
-                logger.info("Committing offsets...");
-                consumer.commitSync();
-                logger.info("Offsets have been committed");
+                if (!bulkItemResponses.hasFailures()) {
+                    logger.info("Status of bulk request : " + bulkItemResponses.status());
+                    logger.info("Committing offsets...");
+                    consumer.commitSync();
+                    logger.info("Offsets have been committed");
+                }else{
+                    for (BulkItemResponse bulkItemResponse : bulkItemResponses) {
+                        if (bulkItemResponse.isFailed()) {
+                            BulkItemResponse.Failure failure = bulkItemResponse.getFailure();
+                            logger.error("Failure ID : " + failure.getId() + "\tFailure Index : "
+                                    + failure.getIndex() + "\tFailure Message : " + failure.getMessage());
+                        }
+                    }
+                }
+
                 Thread.sleep(500);
             }
 
@@ -120,36 +164,17 @@ public class StationMetaDataConsumer {
         catch (InterruptedException e) {
             e.printStackTrace();
         }
-        consumer.close();
-
-    }
-
-    public KafkaConsumer<String, Station> createStationKafkaConsumer(){
-
-        // Create consumer config
-        Properties properties = new Properties();
-        properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, deserializer);
-        properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG,group_ID);
-        properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,"earliest");
-
-        // Create consumer
-        KafkaConsumer<String, Station> consumer = new KafkaConsumer<>(properties);
-
-        //Set the topics
-        List<String> topics = new ArrayList<>();
-        for(String stationType: stationTypes){
-            topics.add(stationType+ "s_metadata");
+        finally{
+            consumer.close();
         }
 
-        // Subscribe to topics
-        consumer.subscribe(topics);
 
-        return consumer;
     }
 
+
 //    public static void main(String[] args) throws IOException {
+//
+//
 //
 //        RestHighLevelClient elasticSearchClient = createClient() ;
 //

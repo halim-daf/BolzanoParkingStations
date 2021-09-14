@@ -80,7 +80,10 @@ public class APIClient {
         HttpResponse<JsonNode> jsonResponse = null;
         String station_url = host + stationType + "/" + dataType + "/latest";
         String parameters = "mvalue,scode,mvalidtime";
-        String whereCondition = "smetadata.municipality.eq.Bolzano - Bozen";
+        String whereCondition = "or(smetadata.municipality.eq.Bolzano - Bozen" +
+                ",smetadata.city.eq.Bozen" +
+                ",smetadata.city.eq.Bolzano - Bozen" +
+                ",smetadata.city.eq.BOLZANO - BOZEN)";
         jsonResponse = Unirest.get(station_url)
                 .header(header, header_value)
                 .queryString("select",parameters)
