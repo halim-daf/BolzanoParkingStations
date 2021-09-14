@@ -40,14 +40,14 @@ PUT /e_charging_measurements
     }  
   }  
 }  
-3. Head to the Elasticsearch_script directory and copy the commands to create Elasticsearch watchers in Kibana dev tools, run it to create the watchers.
-4. Head to the node_server directory in the terminal and execute the command : node application.js, it will start the server and set it to listen on localhost:3000.
-5. Start zookeeper then Kafka Server
-6. Execute the following commands in termain to create the required topics:
-* kafka-topics.sh --bootstrap-server 127.0.0.1:9092 --create --topic EChargingStations_metadata --partitions 1
-* kafka-topics.sh --bootstrap-server 127.0.0.1:9092 --create --topic ParkingStations_metadata --partitions 1
-* kafka-topics.sh --bootstrap-server 127.0.0.1:9092 --create --topic EChargingStations_available_measurements --partitions 1
-* kafka-topics.sh --bootstrap-server 127.0.0.1:9092 --create --topic ParkingStations_occupation_measurements --partitions 1
-7. Open the project in Intellij, head to APIConnector-KafkaProducer module, then in the RestAPIConnector run the classes : StationProducer (just once or everytime it's needed), ParkingStationMeasurementProducer, EChargingStationMeasurementProducer.
-8. In intellij, head to KafkaConsumer-Elasticsearch module, then in the ElasticSearchConsumers package run the class : StationConsumer
-8. Head to "http://localhost:3000/" to visualise the simple GUI.
+3. Head to the Elasticsearch_script directory and copy the commands to create Elasticsearch watchers in Kibana dev tools, run it to create the watchers.  
+4. Head to the node_server directory in the terminal and execute the command : node application.js, it will start the server and set it to listen on localhost:3000.  
+5. Start zookeeper then Kafka Server  
+6. Execute the following commands in termain to create the required topics:  
+* kafka-topics.sh --bootstrap-server 127.0.0.1:9092 --create --topic EChargingStations_metadata --partitions 1  
+* kafka-topics.sh --bootstrap-server 127.0.0.1:9092 --create --topic ParkingStations_metadata --partitions 1  
+* kafka-topics.sh --bootstrap-server 127.0.0.1:9092 --create --topic EChargingStations_available_measurements --partitions 1  
+* kafka-topics.sh --bootstrap-server 127.0.0.1:9092 --create --topic ParkingStations_occupation_measurements --partitions 1  
+7. Open the project in Intellij, head to APIConnector-KafkaProducer module, then in the RestAPIConnector run the classes : StationProducer (just once or everytime it's needed), ParkingStationMeasurementProducer, EChargingStationMeasurementProducer.  
+8. In intellij, head to KafkaConsumer-Elasticsearch module, then in the ElasticSearchConsumers package run the class : StationConsumer  
+9. Head to "http://localhost:3000/" to visualise the simple GUI.
